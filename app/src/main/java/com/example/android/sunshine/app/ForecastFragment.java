@@ -247,18 +247,22 @@ public class ForecastFragment extends Fragment {
         @TargetApi(Build.VERSION_CODES.HONEYCOMB)
         @Override
         protected void onPostExecute(String[] strings) {
-
+            if(strings!=null)
+            {
+                mForecastAdapter.clear();
+                mForecastAdapter.addAll(strings);
+                /*
+                for(string s:strings)
+                    mForecastAdapter.add(s);
+                 */
+            }
             //Build adapter back from scratch -> not good
 //            List<String> weekForecast = new ArrayList<String>(Arrays.asList(strings));
 //            mForecastAdapter = new ArrayAdapter<String>(getActivity(),R.layout.list_item_forcast,R.id.list_item_forecast_textview,weekForecast);
 //            ListView listView = (ListView) getView().findViewById(R.id.listview_forcast);
 //            listView.setAdapter(mForecastAdapter);
 
-            if(strings!=null)
-            {
-                mForecastAdapter.clear();
-                mForecastAdapter.addAll(strings);
-            }
+
         }
 
         private String getReadableDateString(long time){
