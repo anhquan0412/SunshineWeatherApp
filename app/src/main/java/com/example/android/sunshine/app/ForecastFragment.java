@@ -100,6 +100,7 @@ public class ForecastFragment extends Fragment {
             return true;
         }
 
+
         return super.onOptionsItemSelected(item);
     }
 
@@ -237,7 +238,7 @@ public class ForecastFragment extends Fragment {
                 }
 
             } catch (IOException e) {
-                Log.e(LOG_TAG, "Error ", e);
+                Log.e(LOG_TAG, "Error reading from URL ", e);
                 // If the code didn't successfully get the weather data, there's no point in attemping
                 // to parse it.
                 return null;
