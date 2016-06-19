@@ -26,6 +26,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class DetailActivity extends ActionBarActivity {
 
@@ -61,6 +62,7 @@ public class DetailActivity extends ActionBarActivity {
         {
             Intent intent = new Intent(this,SettingsActivity.class);
             startActivity(intent);
+            Toast.makeText(this,"called from detail setting",Toast.LENGTH_SHORT).show();
             return true;
         }
 

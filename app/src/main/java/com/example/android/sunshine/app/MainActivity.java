@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -12,8 +13,10 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //inflate activity_main layout in THIS ACTIVITY
         setContentView(R.layout.activity_main);
         if (savedInstanceState == null) {
+            //ADD A FRAGMENT TO THIS ACTIVITY
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.container, new ForecastFragment())
                     .commit();
@@ -45,6 +48,7 @@ public class MainActivity extends ActionBarActivity {
         if (id == R.id.action_settings) {
             Intent intent = new Intent(this,SettingsActivity.class);
             startActivity(intent);
+            Toast.makeText(this,"Called from main setting",Toast.LENGTH_SHORT).show();
             return true;
         }
 
