@@ -17,10 +17,12 @@ package com.example.android.sunshine.app;
 
 import android.annotation.TargetApi;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.text.format.Time;
 import android.util.Log;
@@ -46,7 +48,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -95,14 +96,39 @@ public class ForecastFragment extends Fragment {
 
         if (id==R.id.action_refresh)
         {
-            FetchWeatherTask task = new FetchWeatherTask();
-            task.execute("77017");
+            updateWeather();
             return true;
         }
 
 
         return super.onOptionsItemSelected(item);
     }
+
+
+    //helper method to get location preference value from sharedpreference
+    private void updateWeather()
+    {
+        FetchWeatherTask task = new FetchWeatherTask();
+
+        //get shared preference
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this.getActivity());
+        //get value based on preference key and value (if no value, use preference default value)
+        String value = sharedPref.getString(getString(R.string.pref_location_key),
+                getString(R.string.pref_location_default));
+
+        task.execute(value);
+    }
+
+
+    //override onStart, so updateWeather is called whenever the fragment starts
+    // THIS FUNCTION CAN BE CALLED MULTIPLE TIMES (WHEN FRAGMENT STARTS)
+    @Override
+    public void onStart()
+    {
+        super.onStart();
+        updateWeather();
+    }
+
 
     /*
     Called to have the fragment instantiate its user interface view
@@ -115,16 +141,18 @@ public class ForecastFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
         // Create some dummy data for the ListView.  Here's a sample weekly forecast
-        String[] data = {
-                "Mon 6/23 - Sunny - 31/17",
-                "Tue 6/24 - Foggy - 21/8",
-                "Wed 6/25 - Cloudy - 22/17",
-                "Thurs 6/26 - Rainy - 18/11",
-                "Fri 6/27 - Foggy - 21/10",
-                "Sat 6/28 - TRAPPED IN WEATHERSTATION - 23/18",
-                "Sun 6/29 - Sunny - 20/7"
-        };
-        List<String> weekForecast = new ArrayList<String>(Arrays.asList(data));
+//        String[] data = {
+//                "Mon 6/23 - Sunny - 31/17",
+//                "Tue 6/24 - Foggy - 21/8",
+//                "Wed 6/25 - Cloudy - 22/17",
+//                "Thurs 6/26 - Rainy - 18/11",
+//                "Fri 6/27 - Foggy - 21/10",
+//                "Sat 6/28 - TRAPPED IN WEATHERSTATION - 23/18",
+//                "Sun 6/29 - Sunny - 20/7"
+//        };
+
+        //empty array list
+        List<String> weekForecast = new ArrayList<String>();
 
         // Now that we have some dummy forecast data, create an ArrayAdapter.
         // The ArrayAdapter will take data from a source (like our dummy forecast) and
@@ -134,7 +162,7 @@ public class ForecastFragment extends Fragment {
                         getActivity(), // The current context (this activity)
                         R.layout.list_item_forcast, // The name of the layout ID.
                         R.id.list_item_forecast_textview, // The ID of the textview to populate.
-                        weekForecast);
+                        weekForecast); //passing empty array list
 
 
 
@@ -169,6 +197,8 @@ public class ForecastFragment extends Fragment {
         protected String[] doInBackground(String... params) {
             // These two need to be declared outside the try/catch
             // so that they can be closed in the finally block.
+
+            Log.e(LOG_TAG,"Yo something change thus task is executed");
 
             if(params.length==0) return null;
             HttpURLConnection urlConnection = null;
