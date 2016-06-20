@@ -113,10 +113,13 @@ public class ForecastFragment extends Fragment {
         //get shared preference
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this.getActivity());
         //get value based on preference key and value (if no value, use preference default value)
-        String value = sharedPref.getString(getString(R.string.pref_location_key),
+        String location = sharedPref.getString(getString(R.string.pref_location_key),
                 getString(R.string.pref_location_default));
 
-        task.execute(value);
+        //get unit's preference value from shared preference
+        String unit = sharedPref.getString(getString(R.string.pref_unit_key),getString(R.string.pref_unit_default));
+        Log.e(ForecastFragment.class.getSimpleName(),location + " " + unit);
+        task.execute(location,unit);
     }
 
 
@@ -198,8 +201,6 @@ public class ForecastFragment extends Fragment {
             // These two need to be declared outside the try/catch
             // so that they can be closed in the finally block.
 
-            Log.e(LOG_TAG,"Yo something change thus task is executed");
-
             if(params.length==0) return null;
             HttpURLConnection urlConnection = null;
             BufferedReader reader = null;
@@ -222,7 +223,7 @@ public class ForecastFragment extends Fragment {
                 Uri builtUri = Uri.parse(baseURL).buildUpon()
                         .appendQueryParameter("q",params[0])
                         .appendQueryParameter("mode",format)
-                        .appendQueryParameter("units",units)
+                        .appendQueryParameter("units",params[1])
                         .appendQueryParameter("cnt",Integer.toString(numDays))
                         .appendQueryParameter("APPID",BuildConfig.OPEN_WEATHER_MAP_API_KEY)
                         .build();
