@@ -22,4 +22,7 @@
     <string name="pref_unit_default" translatable="false">metric</string>
 
     <string name="map_location">Map Location</string>
+
+
+    <string name="action_share">Share</string>
 </resources>

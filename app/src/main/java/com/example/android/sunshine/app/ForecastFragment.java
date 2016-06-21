@@ -57,6 +57,8 @@ public class ForecastFragment extends Fragment {
 
     private ArrayAdapter<String> mForecastAdapter;
 
+
+
     public ForecastFragment() {
 
     }
@@ -72,6 +74,7 @@ public class ForecastFragment extends Fragment {
         //Need this for onCreateOptionsMenu method below
         setHasOptionsMenu(true);
     }
+
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -143,16 +146,16 @@ public class ForecastFragment extends Fragment {
         //inflate the fragment_main layout
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
-        // Create some dummy data for the ListView.  Here's a sample weekly forecast
-//        String[] data = {
-//                "Mon 6/23 - Sunny - 31/17",
-//                "Tue 6/24 - Foggy - 21/8",
-//                "Wed 6/25 - Cloudy - 22/17",
-//                "Thurs 6/26 - Rainy - 18/11",
-//                "Fri 6/27 - Foggy - 21/10",
-//                "Sat 6/28 - TRAPPED IN WEATHERSTATION - 23/18",
-//                "Sun 6/29 - Sunny - 20/7"
-//        };
+//         Create some dummy data for the ListView.  Here's a sample weekly forecast
+        String[] data = {
+                "Mon 6/23 - Sunny - 31/17",
+                "Tue 6/24 - Foggy - 21/8",
+                "Wed 6/25 - Cloudy - 22/17",
+                "Thurs 6/26 - Rainy - 18/11",
+                "Fri 6/27 - Foggy - 21/10",
+                "Sat 6/28 - TRAPPED IN WEATHERSTATION - 23/18",
+                "Sun 6/29 - Sunny - 20/7"
+        };
 
         //empty array list
         List<String> weekForecast = new ArrayList<String>();
@@ -165,7 +168,7 @@ public class ForecastFragment extends Fragment {
                         getActivity(), // The current context (this activity)
                         R.layout.list_item_forcast, // The name of the layout ID.
                         R.id.list_item_forecast_textview, // The ID of the textview to populate.
-                        weekForecast); //passing empty array list
+                        data); //passing empty array list
 
 
 
