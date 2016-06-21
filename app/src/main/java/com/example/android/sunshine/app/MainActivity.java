@@ -1,8 +1,12 @@
 package com.example.android.sunshine.app;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -26,6 +30,7 @@ public class MainActivity extends ActionBarActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
+        //getMenuInflater().inflate(R.menu.map, menu);
         return true;
     }
 
@@ -50,11 +55,35 @@ public class MainActivity extends ActionBarActivity {
             //Toast.makeText(this,"Called from main setting",Toast.LENGTH_SHORT).show();
             return true;
         }
+        else if (id==R.id.map_location)
+        {
+            openLocationInMap();
+        }
 
 
 
         return super.onOptionsItemSelected(item);
     }
 
+    private void openLocationInMap()
+    {
+        SharedPreferences sharedPref= PreferenceManager.getDefaultSharedPreferences(this);
+        String locationValue = sharedPref.getString(getString(R.string.pref_location_key),
+                getString(R.string.pref_location_default));
+
+        Uri geoLocation = Uri.parse("geo:0,0?").buildUpon()
+                .appendQueryParameter("q",locationValue)
+                .build();
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(geoLocation);
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivity(intent);
+        }
+        else
+        {
+            Log.e(MainActivity.class.getSimpleName(),"Error opening location " + locationValue);
+        }
+    }
 
 }
