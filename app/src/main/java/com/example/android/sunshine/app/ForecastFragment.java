@@ -168,7 +168,7 @@ public class ForecastFragment extends Fragment {
                         getActivity(), // The current context (this activity)
                         R.layout.list_item_forcast, // The name of the layout ID.
                         R.id.list_item_forecast_textview, // The ID of the textview to populate.
-                        data); //passing empty array list
+                        weekForecast); //passing empty array list
 
 
 
