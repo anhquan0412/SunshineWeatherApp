@@ -146,7 +146,7 @@ public class TestDb extends AndroidTestCase {
         // Insert ContentValues into database and get a row ID back
         long weatherRowID = db.insert(WeatherContract.WeatherEntry.TABLE_NAME,null, cv);
         // Query the database and receive a Cursor back
-        assertTrue("Error: Failure to insert weather entry values", locationRowID != -1);
+        assertTrue("Error: Failure to insert weather entry values", weatherRowID != -1);
 
         Cursor c = db.query(
                 WeatherContract.WeatherEntry.TABLE_NAME,
