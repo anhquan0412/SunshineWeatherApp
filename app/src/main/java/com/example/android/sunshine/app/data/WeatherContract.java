@@ -23,6 +23,8 @@ import android.text.format.Time;
 
 /**
  * Defines table and column names for the weather database.
+ * Defines URI
+ * Define function to produce different type of URIs
  */
 public class WeatherContract {
 
