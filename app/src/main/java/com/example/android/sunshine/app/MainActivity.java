@@ -1,10 +1,8 @@
 package com.example.android.sunshine.app;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -65,14 +63,21 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
+
+
     private void openLocationInMap()
     {
-        SharedPreferences sharedPref= PreferenceManager.getDefaultSharedPreferences(this);
-        String locationValue = sharedPref.getString(getString(R.string.pref_location_key),
-                getString(R.string.pref_location_default));
+//        SharedPreferences sharedPref= PreferenceManager.getDefaultSharedPreferences(this);
+//        String locationValue = sharedPref.getString(getString(R.string.pref_location_key),
+//                getString(R.string.pref_location_default));
 
+        String location = Utility.getPreferredLocation(this);
+
+        // Using the URI scheme for showing a location found on a map.  This super-handy
+        // intent can is detailed in the "Common Intents" page of Android's developer site:
+        // http://developer.android.com/guide/components/intents-common.html#Maps
         Uri geoLocation = Uri.parse("geo:0,0?").buildUpon()
-                .appendQueryParameter("q",locationValue)
+                .appendQueryParameter("q",location)
                 .build();
 
         Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -82,7 +87,7 @@ public class MainActivity extends ActionBarActivity {
         }
         else
         {
-            Log.e(MainActivity.class.getSimpleName(),"Error opening location " + locationValue);
+            Log.e(MainActivity.class.getSimpleName(),"Error opening location " + location);
         }
     }
 

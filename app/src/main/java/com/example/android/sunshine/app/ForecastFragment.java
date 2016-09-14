@@ -15,10 +15,9 @@
  */
 package com.example.android.sunshine.app;
 
-import android.content.Intent;
-import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -27,20 +26,16 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.example.android.sunshine.app.data.WeatherContract;
 
 /**
  * Encapsulates fetching the forecast and displaying it as a {@link ListView} layout.
  */
 public class ForecastFragment extends Fragment {
 
-    private ArrayAdapter<String> mForecastAdapter;
-
+    private ForecastAdapter mForecastAdapter;
 
 
     public ForecastFragment() {
@@ -81,8 +76,7 @@ public class ForecastFragment extends Fragment {
         //get id of selected item
         int id = item.getItemId();
 
-        if (id==R.id.action_refresh)
-        {
+        if (id == R.id.action_refresh) {
             updateWeather();
             return true;
         }
@@ -93,28 +87,20 @@ public class ForecastFragment extends Fragment {
 
 
     //helper method to get location preference value from sharedpreference
-    private void updateWeather()
-    {
-        FetchWeatherTask task = new FetchWeatherTask(getActivity(),mForecastAdapter);
+    private void updateWeather() {
+        FetchWeatherTask task = new FetchWeatherTask(getActivity());
 
-        //get shared preference
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this.getActivity());
-        //get value based on preference key and value (if no value, use preference default value)
-        String location = sharedPref.getString(getString(R.string.pref_location_key),
-                getString(R.string.pref_location_default));
 
-        //get unit's preference value from shared preference
-        String unit = sharedPref.getString(getString(R.string.pref_unit_key),getString(R.string.pref_unit_default));
-        Log.e(ForecastFragment.class.getSimpleName(),location + " " + unit);
-        task.execute(location,unit);
+        String location = Utility.getPreferredLocation(getActivity());
+        Log.e(ForecastFragment.class.getSimpleName(), location);
+        task.execute(location);
     }
 
 
     //override onStart, so updateWeather is called whenever the fragment starts
     // THIS FUNCTION CAN BE CALLED MULTIPLE TIMES (WHEN FRAGMENT STARTS)
     @Override
-    public void onStart()
-    {
+    public void onStart() {
         super.onStart();
         updateWeather();
     }
@@ -127,8 +113,27 @@ public class ForecastFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
+        String locationSetting = Utility.getPreferredLocation(getActivity());
+
+
+        // Sort order:  Ascending, by date: date ASC
+        String sortOrder = WeatherContract.WeatherEntry.COLUMN_DATE + " ASC";
+        Uri weatherForLocationUri = WeatherContract.WeatherEntry.buildWeatherLocationWithStartDate(
+                locationSetting, System.currentTimeMillis());
+
+        Cursor cur = getActivity().getContentResolver().query(weatherForLocationUri,
+                null, null, null, sortOrder);
+
+        // The CursorAdapter will take data from our cursor and populate the ListView
+        // However, we cannot use FLAG_AUTO_REQUERY since it is deprecated, so we will end
+        // up with an empty list the first time we run.
+        mForecastAdapter = new ForecastAdapter(getActivity(), cur, 0);
+
+
         //inflate the fragment_main layout
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+
+
 
 //         Create some dummy data for the ListView.  Here's a sample weekly forecast
         String[] data = {
@@ -141,18 +146,6 @@ public class ForecastFragment extends Fragment {
                 "Sun 6/29 - Sunny - 20/7"
         };
 
-        //empty array list
-        List<String> weekForecast = new ArrayList<String>();
-
-        // Now that we have some dummy forecast data, create an ArrayAdapter.
-        // The ArrayAdapter will take data from a source (like our dummy forecast) and
-        // use it to populate the ListView it's attached to.
-        mForecastAdapter =
-                new ArrayAdapter<String>(
-                        getActivity(), // The current context (this activity)
-                        R.layout.list_item_forcast, // The name of the layout ID.
-                        R.id.list_item_forecast_textview, // The ID of the textview to populate.
-                        weekForecast); //passing empty array list
 
 
 
@@ -160,23 +153,13 @@ public class ForecastFragment extends Fragment {
         ListView listView = (ListView) rootView.findViewById(R.id.listview_forcast);
         listView.setAdapter(mForecastAdapter);
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                //Toast.makeText(getActivity(),adapterView.getItemAtPosition(i).toString(),Toast.LENGTH_SHORT).show();
-                String content = adapterView.getItemAtPosition(i).toString();
-                Intent detailIntent = new Intent(getActivity(), DetailActivity.class);
-                detailIntent.putExtra(Intent.EXTRA_TEXT, content);
-                startActivity(detailIntent);
-            }
-        });
+
         return rootView;
     }
 
     /* The date/time conversion code is going to be moved outside the asynctask later,
          * so for convenience we're breaking it out into its own method now.
          */
-
 
 
 //    public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
