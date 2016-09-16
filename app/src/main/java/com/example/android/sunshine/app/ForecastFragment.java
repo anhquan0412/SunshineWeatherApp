@@ -15,10 +15,15 @@
  */
 package com.example.android.sunshine.app;
 
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -26,6 +31,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.example.android.sunshine.app.data.WeatherContract;
@@ -33,7 +39,43 @@ import com.example.android.sunshine.app.data.WeatherContract;
 /**
  * Encapsulates fetching the forecast and displaying it as a {@link ListView} layout.
  */
-public class ForecastFragment extends Fragment {
+public class ForecastFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
+
+    private static final int MY_LOADER_ID = 0;
+
+    private static final String[] FORECAST_COLUMNS = {
+            // In this case the id needs to be fully qualified with a table name, since
+            // the content provider joins the location & weather tables in the background
+            // (both have an _id column)
+            // On the one hand, that's annoying.  On the other, you can search the weather table
+            // using the location set by the user, which is only in the Location table.
+            // So the convenience is worth it.
+            WeatherContract.WeatherEntry.TABLE_NAME + "." + WeatherContract.WeatherEntry._ID,
+            WeatherContract.WeatherEntry.COLUMN_DATE,
+            WeatherContract.WeatherEntry.COLUMN_SHORT_DESC,
+            WeatherContract.WeatherEntry.COLUMN_MAX_TEMP,
+            WeatherContract.WeatherEntry.COLUMN_MIN_TEMP,
+            WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING,
+            WeatherContract.WeatherEntry.COLUMN_WEATHER_ID,
+            WeatherContract.LocationEntry.COLUMN_COORD_LAT,
+            WeatherContract.LocationEntry.COLUMN_COORD_LONG
+    };
+
+
+    // These indices are tied to FORECAST_COLUMNS.  If FORECAST_COLUMNS changes, these
+    // must change.
+    static final int COL_WEATHER_ID = 0;
+    static final int COL_WEATHER_DATE = 1;
+    static final int COL_WEATHER_DESC = 2;
+    static final int COL_WEATHER_MAX_TEMP = 3;
+    static final int COL_WEATHER_MIN_TEMP = 4;
+    static final int COL_LOCATION_SETTING = 5;
+    static final int COL_WEATHER_CONDITION_ID = 6;
+    static final int COL_COORD_LAT = 7;
+    static final int COL_COORD_LONG = 8;
+
+
+
 
     private ForecastAdapter mForecastAdapter;
 
@@ -41,6 +83,49 @@ public class ForecastFragment extends Fragment {
     public ForecastFragment() {
 
     }
+
+
+//    tells the fragment that its activity has completed its own Activity.onCreate().
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        getLoaderManager().initLoader(MY_LOADER_ID,null,this);
+        super.onActivityCreated(savedInstanceState);
+
+    }
+
+    //pass in the URI to get weather starting from today, and create new CursorLoader
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args)
+    {
+        Log.d(ForecastFragment.class.getSimpleName(), "in onCreateLoader. Loader is created");
+        //THIS IS THE CONTENT PROVIDER QUERY IN ONCREATEVIEW FUNCTION
+        String locationSetting = Utility.getPreferredLocation(getActivity());
+        Uri baseUri;
+        baseUri = WeatherContract.WeatherEntry.buildWeatherLocationWithStartDate(
+                locationSetting, System.currentTimeMillis());
+        // Sort order:  Ascending, by date: date ASC
+        String sortOrder = WeatherContract.WeatherEntry.COLUMN_DATE + " ASC";
+
+        return new CursorLoader(getActivity(), baseUri,FORECAST_COLUMNS,null,null,sortOrder);
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        // This is called when the last Cursor provided to onLoadFinished()
+        // above is about to be closed.  We need to make sure we are no
+        // longer using it.
+        mForecastAdapter.swapCursor(null);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        // Swap the new cursor in.  (The framework will take care of closing the
+        // old cursor once we return.)
+
+        mForecastAdapter.swapCursor(data);
+    }
+
 
     //Task: INFLATE OPTIONS MENU in this class
 
@@ -86,24 +171,30 @@ public class ForecastFragment extends Fragment {
     }
 
 
+    // since we read the location when we create the loader, all we need to do is restart things
+    void onLocationChanged() {
+        updateWeather(); //to get new weather data from openweather API into our database
+        getLoaderManager().restartLoader(MY_LOADER_ID, null, this); //restart loader
+    }
+
     //helper method to get location preference value from sharedpreference
     private void updateWeather() {
+        Log.e(ForecastFragment.class.getSimpleName(), "updateWeather");
         FetchWeatherTask task = new FetchWeatherTask(getActivity());
-
-
         String location = Utility.getPreferredLocation(getActivity());
-        Log.e(ForecastFragment.class.getSimpleName(), location);
+//        Log.e(ForecastFragment.class.getSimpleName(), location);
         task.execute(location);
     }
 
 
     //override onStart, so updateWeather is called whenever the fragment starts
     // THIS FUNCTION CAN BE CALLED MULTIPLE TIMES (WHEN FRAGMENT STARTS)
-    @Override
-    public void onStart() {
-        super.onStart();
-        updateWeather();
-    }
+//    @Override
+//    public void onStart() {
+//        super.onStart();
+//        Log.e(ForecastFragment.class.getSimpleName(), "updateWeather");
+//        updateWeather();
+//    }
 
 
     /*
@@ -113,46 +204,40 @@ public class ForecastFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        String locationSetting = Utility.getPreferredLocation(getActivity());
-
-
-        // Sort order:  Ascending, by date: date ASC
-        String sortOrder = WeatherContract.WeatherEntry.COLUMN_DATE + " ASC";
-        Uri weatherForLocationUri = WeatherContract.WeatherEntry.buildWeatherLocationWithStartDate(
-                locationSetting, System.currentTimeMillis());
-
-        Cursor cur = getActivity().getContentResolver().query(weatherForLocationUri,
-                null, null, null, sortOrder);
-
         // The CursorAdapter will take data from our cursor and populate the ListView
         // However, we cannot use FLAG_AUTO_REQUERY since it is deprecated, so we will end
         // up with an empty list the first time we run.
-        mForecastAdapter = new ForecastAdapter(getActivity(), cur, 0);
+//        mForecastAdapter = new ForecastAdapter(getActivity(), cur, 0);
 
+        //initially, adapter does not have cursor. Cursor will be swapped in when loader finished its data loading
+        mForecastAdapter = new ForecastAdapter(getActivity(), null, 0);
 
         //inflate the fragment_main layout
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-
-
-
-//         Create some dummy data for the ListView.  Here's a sample weekly forecast
-        String[] data = {
-                "Mon 6/23 - Sunny - 31/17",
-                "Tue 6/24 - Foggy - 21/8",
-                "Wed 6/25 - Cloudy - 22/17",
-                "Thurs 6/26 - Rainy - 18/11",
-                "Fri 6/27 - Foggy - 21/10",
-                "Sat 6/28 - TRAPPED IN WEATHERSTATION - 23/18",
-                "Sun 6/29 - Sunny - 20/7"
-        };
-
-
-
 
         // Get a reference to the ListView, and attach this adapter to it.
         ListView listView = (ListView) rootView.findViewById(R.id.listview_forcast);
         listView.setAdapter(mForecastAdapter);
 
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView adapterView, View view, int position, long l) {
+                // CursorAdapter returns a cursor at the correct position for getItem(), or null
+                // if it cannot seek to that position.
+                Cursor cursor = (Cursor) adapterView.getItemAtPosition(position);
+                if (cursor != null) {
+                    String locationSetting = Utility.getPreferredLocation(getActivity());
+                    //pass a URI for the data needed for the detail view.
+//                    content://com.example.android.sunshine.app/weather/[location_query]/[date]
+                    Intent intent = new Intent(getActivity(), DetailActivity.class)
+                            .setData(WeatherContract.WeatherEntry.buildWeatherLocationWithDate(
+                                    locationSetting, cursor.getLong(COL_WEATHER_DATE)
+                            ));
+                    startActivity(intent);
+                }
+            }
+        });
 
         return rootView;
     }

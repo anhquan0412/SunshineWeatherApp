@@ -11,24 +11,37 @@ import android.view.MenuItem;
 
 public class MainActivity extends ActionBarActivity {
 
+
+    //to store our current known location
+    private String mLocation;
+
+    //a fragment tag:
+//    constant String we can use to tag a fragment within the fragment manager so we can easily look it up later.
+    private final String FORECASTFRAGMENT_TAG = "FFTAG";
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(MainActivity.class.getSimpleName(), "onCreate");
         super.onCreate(savedInstanceState);
         //inflate activity_main layout in THIS ACTIVITY
         setContentView(R.layout.activity_main);
         if (savedInstanceState == null) {
             //ADD A FRAGMENT TO THIS ACTIVITY
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new ForecastFragment())
+                    //ADD THE TAG IN FRAGMENT TRANSACTION
+                    .add(R.id.container, new ForecastFragment(), FORECASTFRAGMENT_TAG)
                     .commit();
         }
+
+        mLocation = Utility.getPreferredLocation(this);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
-        //getMenuInflater().inflate(R.menu.map, menu);
         return true;
     }
 
@@ -50,7 +63,6 @@ public class MainActivity extends ActionBarActivity {
         if (id == R.id.action_settings) {
             Intent intent = new Intent(this,SettingsActivity.class);
             startActivity(intent);
-            //Toast.makeText(this,"Called from main setting",Toast.LENGTH_SHORT).show();
             return true;
         }
         else if (id==R.id.map_location)
@@ -63,7 +75,23 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    protected void onResume() {
+        Log.d(MainActivity.class.getSimpleName(), "onResume");
+        super.onResume();
 
+        String newLocation = Utility.getPreferredLocation(this);
+        if(newLocation!=null && !newLocation.equals(mLocation)) //location has changed
+        {
+//            Get the ForecastFragment using the tag
+            ForecastFragment ff = (ForecastFragment)getSupportFragmentManager().findFragmentByTag(FORECASTFRAGMENT_TAG);
+            if(ff!=null) {
+                // updateWeather() and restart loader -> now loader can link to new data fetched from openweather API
+                ff.onLocationChanged();
+            }
+            mLocation = newLocation;
+        }
+    }
 
     private void openLocationInMap()
     {

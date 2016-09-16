@@ -17,8 +17,14 @@
 package com.example.android.sunshine.app;
 
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.ShareActionProvider;
@@ -32,6 +38,8 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.android.sunshine.app.data.WeatherContract;
+
 public class DetailActivity extends ActionBarActivity {
 
     @Override
@@ -40,7 +48,7 @@ public class DetailActivity extends ActionBarActivity {
         setContentView(R.layout.activity_detail);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment())
+                    .add(R.id.container, new DetailsFragment())
                     .commit();
         }
 
@@ -84,16 +92,39 @@ public class DetailActivity extends ActionBarActivity {
     /**
      * A placeholder fragment containing a simple view.
      */
-    public static class PlaceholderFragment extends Fragment {
-
+    public static class DetailsFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
+        private static final String LOG_TAG = DetailsFragment.class.getSimpleName();
         private ShareActionProvider mShareActionProvider;
         private String forecastString;
-        public PlaceholderFragment() {
+
+        private static final String[] DETAIL_COLUMNS = {
+                // In this case the id needs to be fully qualified with a table name, since
+                // the content provider joins the location & weather tables in the background
+                // (both have an _id column)
+                // On the one hand, that's annoying.  On the other, you can search the weather table
+                // using the location set by the user, which is only in the Location table.
+                // So the convenience is worth it.
+                WeatherContract.WeatherEntry.TABLE_NAME + "." + WeatherContract.WeatherEntry._ID,
+                WeatherContract.WeatherEntry.COLUMN_DATE,
+                WeatherContract.WeatherEntry.COLUMN_SHORT_DESC,
+                WeatherContract.WeatherEntry.COLUMN_MAX_TEMP,
+                WeatherContract.WeatherEntry.COLUMN_MIN_TEMP,
+                WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING,
+                WeatherContract.WeatherEntry.COLUMN_WEATHER_ID,
+                WeatherContract.LocationEntry.COLUMN_COORD_LAT,
+                WeatherContract.LocationEntry.COLUMN_COORD_LONG
+
+
+
+        };
+        private static final int DETAIL_LOADER_ID = 1;
+        public DetailsFragment() {
         }
 
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
+
             super.onCreate(savedInstanceState);
 
             //report that this fragment has option menus in order to handle menu events
@@ -114,6 +145,7 @@ public class DetailActivity extends ActionBarActivity {
 
         @Override
         public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+//            Log.d(LOG_TAG, "in onCreateOptionMenu");
             // Inflate the menu; this adds items to the action bar if it is present.
             inflater.inflate(R.menu.share, menu);
             // Locate MenuItem with ShareActionProvider and retrieve the share menu item
@@ -122,30 +154,94 @@ public class DetailActivity extends ActionBarActivity {
             // Fetch and store ShareActionProvider
             mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
             //set share intent
-            if(mShareActionProvider!=null)
+            if(mShareActionProvider!=null && forecastString != null)
             {
                 mShareActionProvider.setShareIntent(createSharedForecastIntent());
             }
+
+            //share intent is set in onLoadFinished as well since we dont know which one will occur first?
+
             else{
-                Log.e(DetailActivity.class.getSimpleName(),"Share Action Provider is null");
+                Log.e(DetailActivity.class.getSimpleName(),"Share Action Provider is null or Forecast string is null");
             }
         }
 
+        @Override
+        public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+            getLoaderManager().initLoader(DETAIL_LOADER_ID,null,this);
+            super.onActivityCreated(savedInstanceState);
+
+        }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
+//            Log.d(LOG_TAG, "in onCreateView");
 
-            Intent intent = getActivity().getIntent();
+            //inflate the detail view
             View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
-            TextView textView = (TextView)rootView.findViewById(R.id.detailText);
-            if(intent!=null && intent.hasExtra(Intent.EXTRA_TEXT)) {
-                forecastString = intent.getStringExtra(Intent.EXTRA_TEXT);
-                textView.setText(intent.getStringExtra(Intent.EXTRA_TEXT));
-            }
+            //intent extraction will be taken care in onCreateLoader in LoaderManager
+            //because data might be loaded before onCreateView?
+
+
+            //view setting will be taken care in onLoadFinished
+
             return rootView;
         }
 
 
+        //Task: impelement details view using cursorloader, loading data URI from intent
+
+        //get URI from content and create new cursorloader
+        @Override
+        public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+//            Log.d(LOG_TAG, "in onCreateLoader in LoaderManager");
+            Intent intent = getActivity().getIntent();
+            if(intent!=null) {
+//                forecastString = intent.getStringExtra(Intent.EXTRA_TEXT);
+//                textView.setText(intent.getStringExtra(Intent.EXTRA_TEXT));
+
+
+                Uri temp = intent.getData(); //get that URI
+//                content://com.example.android.sunshine.app/weather/[location_query]/[date]
+
+                return new CursorLoader(getActivity(), temp,DETAIL_COLUMNS,null,null,null);
+            }
+            return null;
+
+        }
+
+
+        //get data from cursor, get text view and set the text
+        @Override
+        public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+//            Log.d(LOG_TAG, "in onLoadFinished in LoaderManager. Cursor position: " + data.getPosition());
+            if (!data.moveToFirst()) { return; }
+            boolean isMetric = Utility.isMetric(getActivity());
+            String temperature = Utility.formatTemperature(data.getDouble(ForecastFragment.COL_WEATHER_MIN_TEMP),isMetric)
+                    + "/"+
+                    Utility.formatTemperature(data.getDouble(ForecastFragment.COL_WEATHER_MAX_TEMP),isMetric);
+            String desc = data.getString(ForecastFragment.COL_WEATHER_DESC);
+            String date = Utility.formatDate(data.getLong(ForecastFragment.COL_WEATHER_DATE));
+
+            forecastString = date + "-" + desc + "-" + temperature;
+
+            //WE ARE ASSUMING DETAIL VIEW EXISTS ALREADY (by ONCREATEVIEW function)
+            if(getView()!= null) {
+                TextView textView = (TextView) getView().findViewById(R.id.detailText);
+                textView.setText(forecastString);
+            }
+
+            //set share intent when forecastString is created
+            if(mShareActionProvider!=null)
+            {
+                mShareActionProvider.setShareIntent(createSharedForecastIntent());
+            }
+        }
+
+        @Override
+        public void onLoaderReset(Loader<Cursor> loader) {
+
+        }
     }
 }
