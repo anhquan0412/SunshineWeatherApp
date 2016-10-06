@@ -106,7 +106,7 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         // Sort order:  Ascending, by date: date ASC
         String sortOrder = WeatherContract.WeatherEntry.COLUMN_DATE + " ASC";
 
-        return new CursorLoader(getActivity(), baseUri,FORECAST_COLUMNS,null,null,sortOrder);
+        return new CursorLoader(getActivity(),baseUri,FORECAST_COLUMNS,null,null,sortOrder);
 
     }
 

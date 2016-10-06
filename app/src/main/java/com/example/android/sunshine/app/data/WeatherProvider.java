@@ -222,7 +222,7 @@ public class WeatherProvider extends ContentProvider {
             }
             // "weather/*"
             case WEATHER_WITH_LOCATION: {
-                //this need a special query (inner join of weather and location table)
+                //this need a special query
                 retCursor = getWeatherByLocationSetting(uri, projection, sortOrder);
                 break;
             }

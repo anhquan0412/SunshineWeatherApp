@@ -190,7 +190,7 @@ public class DetailActivity extends ActionBarActivity {
         }
 
 
-        //Task: impelement details view using cursorloader, loading data URI from intent
+        //Task: implement details view using cursorloader, loading data URI from intent
 
         //get URI from content and create new cursorloader
         @Override
