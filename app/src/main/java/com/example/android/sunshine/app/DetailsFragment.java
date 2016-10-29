@@ -197,7 +197,9 @@ public class DetailsFragment extends Fragment implements LoaderManager.LoaderCal
             viewHolder.dateView.setText(date);
             viewHolder.highTempView.setText(high);
             viewHolder.lowTempView.setText(low);
-            viewHolder.iconView.setImageResource(R.drawable.ic_launcher);
+
+            viewHolder.iconView.setImageResource(Utility.getArtResourceForWeatherCondition(weatherId));
+
             viewHolder.descriptionView.setText(desc);
 
             viewHolder.humidView.setText(String.format(getActivity().getString(R.string.format_humidity),
