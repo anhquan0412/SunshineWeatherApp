@@ -8,8 +8,10 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.example.android.sunshine.app.data.WeatherContract;
 
-public class MainActivity extends ActionBarActivity {
+
+public class MainActivity extends ActionBarActivity implements ForecastFragment.Callback {
 
 
     //to store our current known location
@@ -17,25 +19,49 @@ public class MainActivity extends ActionBarActivity {
 
     //a fragment tag:
 //    constant String we can use to tag a fragment within the fragment manager so we can easily look it up later.
-    private final String FORECASTFRAGMENT_TAG = "FFTAG";
+//    private final String FORECASTFRAGMENT_TAG = "FFTAG"; //no need tag for this shit, since forecast fragment will never be created explicitly
 
+    private static final String DETAILFRAGMENT_TAG = "DFTAG";
+    private boolean mTwoPane;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(MainActivity.class.getSimpleName(), "onCreate");
         super.onCreate(savedInstanceState);
+        mLocation = Utility.getPreferredLocation(this);
         //inflate activity_main layout in THIS ACTIVITY
         setContentView(R.layout.activity_main);
-        if (savedInstanceState == null) {
-            //ADD A FRAGMENT TO THIS ACTIVITY
-            getSupportFragmentManager().beginTransaction()
-                    //ADD THE TAG IN FRAGMENT TRANSACTION
-                    .add(R.id.container, new ForecastFragment(), FORECASTFRAGMENT_TAG)
-                    .commit();
-        }
 
-        mLocation = Utility.getPreferredLocation(this);
+
+        //Since we already declare static fragment in activity_main (in both handheld and tablet), we don't need to manually do it here
+//        if (savedInstanceState == null)
+//        {
+//            getSupportFragmentManager().beginTransaction().add(R.id.container, new ForecastFragment()).commit();
+//        }
+        if(findViewById(R.id.weather_detail_container) != null)
+        {
+            //only layout-sw600dp has weather_detail_container
+            mTwoPane = true;
+
+            //show  detail view in this activity
+            // only do this when savedInstanceState stores nothing. If savedInstanceState is initialized, system will handle restoring the fragment
+            if(savedInstanceState== null)
+            {
+                DetailsFragment df = new DetailsFragment();
+                Bundle arg = new Bundle();
+                Uri temp = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(mLocation,Utility.getToday());
+                arg.putParcelable(DetailsFragment.DETAIL_URI, temp);
+                df.setArguments(arg);
+
+                getSupportFragmentManager().beginTransaction().replace(R.id.weather_detail_container, df, DETAILFRAGMENT_TAG).commit();
+            }
+
+        }
+        else
+            mTwoPane = false;
+
+
     }
 
     @Override
@@ -84,10 +110,15 @@ public class MainActivity extends ActionBarActivity {
         if(newLocation!=null && !newLocation.equals(mLocation)) //location has changed
         {
 //            Get the ForecastFragment using the tag
-            ForecastFragment ff = (ForecastFragment)getSupportFragmentManager().findFragmentByTag(FORECASTFRAGMENT_TAG);
+            ForecastFragment ff = (ForecastFragment)getSupportFragmentManager().findFragmentById(R.id.fragment_forecast);
             if(ff!=null) {
                 // updateWeather() and restart loader -> now loader can link to new data fetched from openweather API
                 ff.onLocationChanged();
+            }
+            DetailsFragment df = (DetailsFragment)getSupportFragmentManager().findFragmentByTag(DETAILFRAGMENT_TAG);
+            if(df!=null)
+            {
+                df.onLocationChanged(newLocation);
             }
             mLocation = newLocation;
         }
@@ -119,4 +150,38 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    @Override
+    public void onItemSelected(Uri dateUri) {
+
+        /** pseudo code:
+        if one pane, create intent and start DetailActivity
+         if 2 pane, create new detail fragment given the dateUri and replace the old detail fragment withit
+
+         **/
+        if(mTwoPane)
+        {
+            //create arguments
+            Bundle args = new Bundle();
+            args.putParcelable(DetailsFragment.DETAIL_URI,dateUri);
+            DetailsFragment df = new DetailsFragment();
+
+            //set arguments to new DetailsFragment obj
+            df.setArguments(args);
+
+            //replace old DetailsFragment
+            getSupportFragmentManager().beginTransaction().replace(R.id.weather_detail_container, df, DETAILFRAGMENT_TAG).commit();
+
+        }
+        else
+        {
+            //Create intent with dateUri and starts details activity
+            Intent intent = new Intent(this, DetailActivity.class)
+                    .setData(dateUri);
+            startActivity(intent);
+        }
+
+
+
+
+    }
 }

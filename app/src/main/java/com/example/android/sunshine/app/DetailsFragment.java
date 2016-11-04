@@ -21,6 +21,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.android.sunshine.app.data.WeatherContract;
+
 /**
  * Created by anhqu on 10/14/2016.
  */
@@ -29,28 +31,10 @@ public class DetailsFragment extends Fragment implements LoaderManager.LoaderCal
     private static final String LOG_TAG = DetailsFragment.class.getSimpleName();
     private ShareActionProvider mShareActionProvider;
     private String forecastString;
+    public static final String DETAIL_URI = "detailURI";
 
-//    private static final String[] DETAIL_COLUMNS = {
-//            // In this case the id needs to be fully qualified with a table name, since
-//            // the content provider joins the location & weather tables in the background
-//            // (both have an _id column)
-//            // On the one hand, that's annoying.  On the other, you can search the weather table
-//            // using the location set by the user, which is only in the Location table.
-//            // So the convenience is worth it.
-//            WeatherContract.WeatherEntry.TABLE_NAME + "." + WeatherContract.WeatherEntry._ID,
-//            WeatherContract.WeatherEntry.COLUMN_DATE,
-//            WeatherContract.WeatherEntry.COLUMN_SHORT_DESC,
-//            WeatherContract.WeatherEntry.COLUMN_MAX_TEMP,
-//            WeatherContract.WeatherEntry.COLUMN_MIN_TEMP,
-//            WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING,
-//            WeatherContract.WeatherEntry.COLUMN_WEATHER_ID,
-//            WeatherContract.LocationEntry.COLUMN_COORD_LAT,
-//            WeatherContract.LocationEntry.COLUMN_COORD_LONG,
-//            WeatherContract.WeatherEntry.COLUMN_HUMIDITY,
-//            WeatherContract.WeatherEntry.COLUMN_PRESSURE,
-//            WeatherContract.WeatherEntry.COLUMN_WIND_SPEED,
-//            WeatherContract.WeatherEntry.COLUMN_DEGREES
-//    };
+    private Uri mUri;
+
 
 
     private static final int DETAIL_LOADER_ID = 1;
@@ -84,6 +68,7 @@ public class DetailsFragment extends Fragment implements LoaderManager.LoaderCal
     }
 
     private DetailViewHolder viewHolder;
+
     public DetailsFragment() {
     }
 
@@ -144,6 +129,14 @@ public class DetailsFragment extends Fragment implements LoaderManager.LoaderCal
                              Bundle savedInstanceState) {
 //            Log.d(LOG_TAG, "in onCreateView");
 
+        //initialize date URI variable here
+        Bundle arguments = getArguments();
+        if(arguments!=null){
+            mUri = arguments.getParcelable(DETAIL_URI);
+        }
+
+
+
         //inflate the detail view
         View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
         //intent extraction will be taken care in onCreateLoader in LoaderManager
@@ -155,6 +148,20 @@ public class DetailsFragment extends Fragment implements LoaderManager.LoaderCal
         return rootView;
     }
 
+    //notify when there is a change in location (in setting). Pass in newLocation, such as 77017
+    void onLocationChanged(String newLocation)
+    {
+        Uri uri = mUri;
+        if (uri != null) {
+            //try to get date from URI
+            long date = WeatherContract.WeatherEntry.getDateFromUri(uri);
+
+            //get new URI based on date and NEW location
+            Uri updatedUri = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(newLocation,date);
+            mUri = updatedUri; //update mUri
+            getLoaderManager().restartLoader(DETAIL_LOADER_ID,null,this);
+        }
+    }
 
     //Task: implement details view using cursorloader, loading data URI from intent
 
@@ -162,17 +169,21 @@ public class DetailsFragment extends Fragment implements LoaderManager.LoaderCal
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 //            Log.d(LOG_TAG, "in onCreateLoader in LoaderManager");
-        Intent intent = getActivity().getIntent();
-        if(intent!=null) {
-//                forecastString = intent.getStringExtra(Intent.EXTRA_TEXT);
-//                textView.setText(intent.getStringExtra(Intent.EXTRA_TEXT));
+
+        //no need to get data from intent here, since it is already in bundle, and extracted to mURI already
+//        Intent intent = getActivity().getIntent();
 
 
-            Uri temp = intent.getData(); //get that URI
-//                content://com.example.android.sunshine.app/weather/[location_query]/[date]
+        if(mUri != null)
+            return new CursorLoader(
+                getActivity(),
+                mUri,
+                ForecastFragment.FORECAST_COLUMNS,
+                null,
+                null,
+                null
+        );
 
-            return new CursorLoader(getActivity(), temp,ForecastFragment.FORECAST_COLUMNS,null,null,null);
-        }
         return null;
 
     }
@@ -213,17 +224,6 @@ public class DetailsFragment extends Fragment implements LoaderManager.LoaderCal
         }
 
         forecastString = String.format("%s - %s - %s/%s",date,desc,high,low);
-
-
-        //WE ARE ASSUMING DETAIL VIEW EXISTS ALREADY (by ONCREATEVIEW function)
-//            if(getView()!= null) {
-//                TextView textView = (TextView) getView().findViewById(R.id.detailText);
-//                textView.setText(forecastString);
-//            }
-
-
-
-
 
 
         //set share intent when forecastString is created

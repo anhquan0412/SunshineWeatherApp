@@ -29,9 +29,19 @@ public class DetailActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
+
+        //only in 1-pane (tablet) mode
         if (savedInstanceState == null) {
+            // savedInstanceState == null means fragment is not initialized yet
+            Bundle arguments = new Bundle();
+            arguments.putParcelable(DetailsFragment.DETAIL_URI, getIntent().getData());
+            DetailsFragment df = new DetailsFragment();
+
+            df.setArguments(arguments);
+
+            //add details fragment
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new DetailsFragment())
+                    .add(R.id.weather_detail_container, df)
                     .commit();
         }
 
