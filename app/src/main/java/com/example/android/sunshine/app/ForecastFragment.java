@@ -124,6 +124,8 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         // Sort order:  Ascending, by date: date ASC
         String sortOrder = WeatherContract.WeatherEntry.COLUMN_DATE + " ASC";
 
+        Log.d(ForecastFragment.class.getSimpleName(), baseUri.toString());
+
         return new CursorLoader(getActivity(),baseUri,FORECAST_COLUMNS,null,null,sortOrder);
 
     }
@@ -141,6 +143,11 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         // Swap the new cursor in.  (The framework will take care of closing the
         // old cursor once we return.)
 
+        Log.d(ForecastFragment.class.getSimpleName(), "Finish loading");
+        if(data == null)
+        {
+            Log.e(ForecastFragment.class.getSimpleName(), "cusros is null!!!");
+        }
         mForecastAdapter.swapCursor(data);
     }
 

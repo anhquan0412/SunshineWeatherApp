@@ -29,7 +29,10 @@ public class MainActivity extends ActionBarActivity implements ForecastFragment.
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(MainActivity.class.getSimpleName(), "onCreate");
         super.onCreate(savedInstanceState);
-        mLocation = Utility.getPreferredLocation(this);
+        if(mLocation == null) {
+            Log.d(MainActivity.class.getSimpleName(), "mLocation is null, so update mLocation");
+            mLocation = Utility.getPreferredLocation(this);
+        }
         //inflate activity_main layout in THIS ACTIVITY
         setContentView(R.layout.activity_main);
 
@@ -123,7 +126,8 @@ public class MainActivity extends ActionBarActivity implements ForecastFragment.
             }
             mLocation = newLocation;
         }
-        Log.e(MainActivity.class.getSimpleName(),"location not change!");
+        else
+            Log.e(MainActivity.class.getSimpleName(),"location not change!");
     }
 
     private void openLocationInMap()
