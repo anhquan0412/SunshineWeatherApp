@@ -109,6 +109,7 @@ public class MainActivity extends ActionBarActivity implements ForecastFragment.
         String newLocation = Utility.getPreferredLocation(this);
         if(newLocation!=null && !newLocation.equals(mLocation)) //location has changed
         {
+            Log.e(MainActivity.class.getSimpleName(),"location change!");
 //            Get the ForecastFragment using the tag
             ForecastFragment ff = (ForecastFragment)getSupportFragmentManager().findFragmentById(R.id.fragment_forecast);
             if(ff!=null) {
@@ -122,6 +123,7 @@ public class MainActivity extends ActionBarActivity implements ForecastFragment.
             }
             mLocation = newLocation;
         }
+        Log.e(MainActivity.class.getSimpleName(),"location not change!");
     }
 
     private void openLocationInMap()

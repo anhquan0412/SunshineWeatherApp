@@ -168,7 +168,7 @@ public class DetailsFragment extends Fragment implements LoaderManager.LoaderCal
     //get URI from content and create new cursorloader
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-//            Log.d(LOG_TAG, "in onCreateLoader in LoaderManager");
+            Log.d(LOG_TAG, "in onCreateLoader in DetailsFragment");
 
         //no need to get data from intent here, since it is already in bundle, and extracted to mURI already
 //        Intent intent = getActivity().getIntent();
