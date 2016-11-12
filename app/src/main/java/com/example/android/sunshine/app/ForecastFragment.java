@@ -43,6 +43,8 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
     private static final int MY_LOADER_ID = 0;
     private static final String CURR_POSITION = "current_position";
 
+
+    private boolean mUseTodayLayout;
     private ListView mListView;
     private static int mCurrPosition;
     public static final String[] FORECAST_COLUMNS = {
@@ -104,6 +106,20 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
 
     }
 
+
+    // set mUseTodayLayout for ForecastFragment here
+    // This function is called by MainActivity
+    public void setmUseTodayLayout(boolean useTodayLayout)
+    {
+        mUseTodayLayout = useTodayLayout;
+        if(mForecastAdapter!=null)
+        {
+            mForecastAdapter.setmUseTodayLayout(mUseTodayLayout);
+        }
+        // if mForecastAdapter here is null, which means onCreate of MainAvtivity might be called before onCreateView of ForecastFragment
+        // where the adapter is initialized
+        // Therefore, you need to set mUseTodayLayout after the adapter initialization as well, which is at the end of onCreateView
+    }
 
     //    tells the fragment that its activity has completed its own Activity.onCreate().
     @Override
@@ -290,6 +306,8 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
             mCurrPosition = savedInstanceState.getInt(CURR_POSITION);
         }
 
+        //SET mUserTodayLayout in ForecastAdapter here
+        mForecastAdapter.setmUseTodayLayout(mUseTodayLayout);
 
         return rootView;
     }

@@ -19,6 +19,8 @@ public class ForecastAdapter extends CursorAdapter {
     private final int VIEW_TODAY = 0;
     private final int VIEW_FUTURE = 1;
 
+
+    private boolean mUseTodayLayout = true;
     public ForecastAdapter(Context context, Cursor c, int flags) {
         super(context, c, flags);
     }
@@ -79,10 +81,12 @@ public class ForecastAdapter extends CursorAdapter {
         return view;
     }
 
-    /*
-        This is where we fill-in the views with the contents of the cursor.
-        Binding the values in the cursor to the view
-     */
+
+    // this function is called in main activity
+    public void setmUseTodayLayout(boolean useTodayLayout)
+    {
+        mUseTodayLayout = useTodayLayout;
+    }
 
 
     //normally this will return 1, for 1 layout
@@ -95,9 +99,14 @@ public class ForecastAdapter extends CursorAdapter {
     @Override
     public int getItemViewType(int position) {
         //if position of the item on the list is - -> today view layout
-        return (position ==0 ) ? VIEW_TODAY : VIEW_FUTURE;
+        return (position ==0 && mUseTodayLayout) ? VIEW_TODAY : VIEW_FUTURE;
     }
 
+
+    /*
+    This is where we fill-in the views with the contents of the cursor.
+    Binding the values in the cursor to the view
+ */
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
         Log.d(ForecastAdapter.class.getSimpleName(), "in bindView. Cursor position: " + cursor.getPosition());
@@ -112,11 +121,13 @@ public class ForecastAdapter extends CursorAdapter {
 
         // Read weather icon ID from cursor
         int weatherId = cursor.getInt(ForecastFragment.COL_WEATHER_CONDITION_ID);
+
+        int viewType = getItemViewType(cursor.getPosition());
         // Use placeholder image for now
         ImageView iconView = viewHolder.iconView;
-        if(getItemViewType(cursor.getPosition()) == VIEW_TODAY)
+        if(viewType == VIEW_TODAY)
             iconView.setImageResource(Utility.getArtResourceForWeatherCondition(weatherId));
-        else if (getItemViewType(cursor.getPosition()) == VIEW_FUTURE)
+        else if (viewType == VIEW_FUTURE)
             iconView.setImageResource(Utility.getIconResourceForWeatherCondition(weatherId));
 
         // TODO Read date from cursor
