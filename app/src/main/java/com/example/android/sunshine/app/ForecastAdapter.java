@@ -141,6 +141,11 @@ public class ForecastAdapter extends CursorAdapter {
         TextView forecastView = viewHolder.descriptionView;
         forecastView.setText(forecast);
 
+
+        //image has a description view, set this description view to forecast string, for accessibility
+        iconView.setContentDescription(forecast);
+
+
         // Read user preference for metric or imperial temperature units
         boolean isMetric = Utility.isMetric(context);
 
